@@ -1,24 +1,10 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis
-  labels:
-    app: redis
-spec:
-  ports:
-  - port: 6379
-    name: redis
-  clusterIP: None
-  selector:
-    app: redis
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis
 spec:
   serviceName: "redis"
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: redis
@@ -36,6 +22,22 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
+        - name: script
+          mountPath: /script
+        - name: passwd-volume
+          mountPath: /etc/redis-passwd
+        command:
+        - sh
+        - -c
+        - /script/redis-launch.sh
+      volumes:
+      - name: script
+        configMap:
+          name: redis-config
+          defaultMode: 0777
+      - name: passwd-volume
+        secret:
+          secretName: redis-passwd
   volumeClaimTemplates:
   - metadata:
       name: data
@@ -43,4 +45,45 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: 10Gi
+          storage: 4Gi
+
+---
+
+# Redis Read Service - we don't care from which redis replica the client will read, the data is shared between the 3 replicas
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: redis
+  name: redis
+  namespace: default
+spec:
+  ports:
+  - port: 6379
+    protocol: TCP
+    targetPort: 6379
+  selector:
+    app: redis
+  sessionAffinity: None
+  type: ClusterIP
+
+
+---
+
+# Redis Write Service - The service should point to the primary replicas to write it could be redis-0.
+# Headless service is a service that doesn't have an ClusterIP instead, it programs a DNS entry for every pod
+# in the StatefulSet. This means that we can access our master via the redis-0.redis DNS name:
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: redis-write
+  name: redis-write
+spec:
+  clusterIP: None
+  ports:
+  - port: 6379
+  selector:
+    app: redis

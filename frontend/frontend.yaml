@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -6,7 +6,7 @@ metadata:
   name: frontend
   namespace: default
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       run: frontend
@@ -23,10 +23,17 @@ spec:
         terminationMessagePolicy: File
         resources:
           requests:
-            cpu: "1.0"
-            memory: "1G"
+            memory: 300Mi
+            cpu: 100m
           limits:
-            cpu: "1.0"
-            memory: "1G"
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
+            memory: 300Mi
+            cpu: 100m
+        env:
+          - name: JOURNAL_ENTRIES
+            valueFrom:
+              configMapKeyRef:
+                name: frontend-config
+                key: journalEntries
+#      dnsPolicy: ClusterFirst
+#      restartPolicy: Always
+
