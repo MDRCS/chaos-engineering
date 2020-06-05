@@ -1,33 +1,33 @@
-  
-#
-# Redis Dockerfile
-#
-# https://github.com/dockerfile/redis
-#
-
 # Pull base image.
-FROM ubuntu:14.04
-RUN  apt-get update \
-  && apt-get install -y wget \
-  && rm -rf /var/lib/apt/lists/*
-RUN sudo apt-get install build-essential
+FROM debian:jessie
+
+ENV REDIS_VERSION 2.8.19
 
 # Install Redis.
-RUN \
+RUN apt-get update && apt-get -y install less curl net-tools build-essential && \
   cd /tmp && \
-  wget http://download.redis.io/redis-stable.tar.gz && \
-  tar xvzf redis-stable.tar.gz && \
-  cd redis-stable && \
+  curl -O http://download.redis.io/releases/redis-${REDIS_VERSION}.tar.gz && \
+  tar xvzf redis-${REDIS_VERSION}.tar.gz && \
+  cd redis-${REDIS_VERSION} && \
   make && \
   make install && \
   cp -f src/redis-sentinel /usr/local/bin && \
   mkdir -p /etc/redis && \
   cp -f *.conf /etc/redis && \
-  rm -rf /tmp/redis-stable* && \
+  rm -rf /tmp/redis-${REDIS_VERSION}* && \
   sed -i 's/^\(bind .*\)$/# \1/' /etc/redis/redis.conf && \
   sed -i 's/^\(daemonize .*\)$/# \1/' /etc/redis/redis.conf && \
   sed -i 's/^\(dir .*\)$/# \1\ndir \/data/' /etc/redis/redis.conf && \
-  sed -i 's/^\(logfile .*\)$/# \1/' /etc/redis/redis.conf
+  sed -i 's/^\(logfile .*\)$/# \1/' /etc/redis/redis.conf && \
+  apt-get remove -y --purge binutils build-essential bzip2 cpp cpp-4.9 dpkg-dev\
+  fakeroot g++ g++-4.9 gcc gcc-4.9 ifupdown less\
+  libalgorithm-diff-perl libalgorithm-diff-xs-perl libalgorithm-merge-perl\
+  libc-dev-bin libc6-dev libclass-isa-perl libdpkg-perl\
+  libfile-fcntllock-perl libgdbm3 libgmp10 libgomp1\
+  libitm1 libmpfr4 libquadmath0\
+  libstdc++-4.9-dev libswitch-perl libtimedate-perl linux-libc-dev\
+  make manpages manpages-dev netbase patch perl perl-modules &&\
+  apt-get clean autoclean && apt-get autoremove -y && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 # Define mountable directories.
 VOLUME ["/data"]
