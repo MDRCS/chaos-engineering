@@ -30,16 +30,16 @@ pipeline:
     secrets: [ docker_username, docker_password ]
 
   kubectl-redis:
-    image: dstrebel/drone-kubectl-helm
+    image: mdrahali/drone-kubectl-helm
     secrets: [ kubernetes_server, kubernetes_cert, kubernetes_token ]
     kubectl: "apply -f ./redis/deployment.yaml"
 
   kubectl-frontend:
-    image: dstrebel/drone-kubectl-helm
+    image: mdrahali/drone-kubectl-helm
     secrets: [ kubernetes_server, kubernetes_cert, kubernetes_token ]
     kubectl: "apply -f ./frontend/deployment.yaml"
 
   test-deployment:
-    image: dstrebel/drone-kubectl-helm
+    image: mdrahali/drone-kubectl-helm
     secrets: [ kubernetes_server, kubernetes_cert, kubernetes_token ]
     kubectl: "get deployment frontend"
